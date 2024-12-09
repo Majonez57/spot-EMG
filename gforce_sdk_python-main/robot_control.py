@@ -80,6 +80,7 @@ class Application:
 
         # await gforce_device.set_subscription(
         #     gforce.DataSubscription.EMG_RAW
+        #     # gforce.DataSubscription.EMG_GESTURE
         # )
         
         q = await gforce_device.start_streaming()
@@ -88,9 +89,11 @@ class Application:
         started = 0
         start_roll = 0
         start_pitch = 0
+        start_yaw = 0
 
         while not self.terminated:
             v = await q.get()
+            # print(q.qsize())
             # v2 = await q2.get()
             
             # print(v)
@@ -102,25 +105,33 @@ class Application:
                 if started == 0:
                     start_roll = orientation_data[1]
                     start_pitch = orientation_data[0]
+                    start_yaw = orientation_data[2]
                     started = 1
-                if (orientation_data[1] - start_roll) < -20:
-                    print("right")
-                elif (orientation_data[1] - start_roll) > 40:
-                    print("left")
+                # if (orientation_data[1] - start_roll) < -20:
+                #     print("right")
+                # elif (orientation_data[1] - start_roll) > 40:
+                #     print("left")
                 if (orientation_data[0] - start_pitch) < -40:
                     print("back")
                 elif (orientation_data[0] - start_pitch) > 40:
                     print("forward")
+                if (orientation_data[2] - start_yaw) < -20:
+                    print("right")
+                elif (orientation_data[2] - start_yaw) > 20:
+                    print("left")
                 # print("orientation: ", orientation_data)
             else:
-                emg_data = convert_raw_emg_to_uv(v, gforce_device.resolution)
-                print("emg: ", emg_data)
+                # emg_data = convert_raw_emg_to_uv(v, gforce_device.resolution)
+                # ddp = [abs(i[1] - i[0]) for i in emg_data]
+                # print("emg: ", sum(ddp))
+                pass
     
             # Update the orientation of the box
             # update_orientation(list(map(math.radians, orientation_data)))
             
             # Control the refresh rate
-            #rate(60)  # Adjust for your preferred frame rate
+            # rate(60)  # Adjust for your preferred frame rate
+            # await asyncio.sleep(0.5)
 
         await gforce_device.stop_streaming()
         await gforce_device.disconnect()
