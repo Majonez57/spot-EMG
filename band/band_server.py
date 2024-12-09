@@ -15,7 +15,7 @@ current_dir = os.path.dirname(os.path.realpath(__file__))
 parent_dir = os.path.dirname(current_dir)
 sys.path.append(parent_dir)
 
-from lib_gforce import gforce
+from band.lib_gforce import gforce
 
 class Application:
 
@@ -67,12 +67,18 @@ class Application:
         while not self.terminated:
             # receive data stream. it won't accept data packet greater than 1024 bytes
             data = conn.recv(1024).decode()
+            if not data:
+                continue
             print("from connected user: " + str(data))
             if str(data) == "get_cmd":
-                
+                print("true")
                 msg = "none"
+                
                 v = await q.get()
+                while not q.empty():
+                    v = await q.get()
 
+                print(f"Got: {v}")
                 if len(v[0]) == 3:
                     # Fetch orientation data from your IMU
                     orientation_data = v[0]  # Replace with actual data fetching

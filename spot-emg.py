@@ -3,6 +3,7 @@ import logging
 import sys
 import threading
 import time
+import socket
 
 import bosdyn.api.basic_command_pb2 as basic_command_pb2
 import bosdyn.api.power_pb2 as PowerServiceProto
@@ -29,9 +30,9 @@ from band.band_controller import SensorBand
 
 LOGGER = logging.getLogger()
 
-VELOCITY_BASE_SPEED = 0.2  # m/s
-VELOCITY_BASE_ANGULAR = 0.2  # rad/sec
-VELOCITY_CMD_DURATION = 0.5  # seconds
+VELOCITY_BASE_SPEED = 0.6  # m/s
+VELOCITY_BASE_ANGULAR = 0.5  # rad/sec
+VELOCITY_CMD_DURATION = 0.6  # seconds
 COMMAND_INPUT_RATE = 0.1
 
 def _grpc_or_log(desc, thunk):
@@ -413,19 +414,6 @@ class EMGInterface(object):
             time_left = f'({secs_to_hms(battery_state.estimated_runtime.seconds)})'
         return f'Battery: {status}{bat_bar} {time_left}'
 
-
-def connect_to_band():
-    band = None
-    while True:
-        try:
-            band = SensorBand()
-            print("Intialising Band...")
-            asyncio.run(band.start())
-            print("Initiating Robot....")
-            return band
-        except:
-            print("Failed to connect to band... Retrying")
-
 def main():
 
     # Create robot object.
@@ -446,6 +434,17 @@ def main():
         LOGGER.error('Failed to initialize robot communication: %s', err)
         return False
 
+    s = socket.socket()
+    port = 5000
+    s.connect(('127.0.0.1', port))
+        
+    def getcommandfromserver():
+        s.send("get_cmd".encode())
+        msg = s.recv(1024).decode()
+        return msg
+    
+    print(getcommandfromserver())
+    
     wasd_interface._toggle_estop()
     #wasd_interface._toggle_lease()
     wasd_interface._toggle_power()
@@ -453,13 +452,11 @@ def main():
     wasd_interface._stand()
     time.sleep(2)
 
-
-
-    band = connect_to_band()
-    start = datetime.datetime.now()
+    start = time.time()
     while True:
         
-        command = asyncio.run(band.get_cmd())
+        command = getcommandfromserver()
+
         match command:
             case 'back':
                 wasd_interface._move_backward()
@@ -472,10 +469,10 @@ def main():
             case _:
                 continue
 
-        if datetime.datetime.now() - start > 60:
+        if time.time() - start > 700:
             break
 
-        time.sleep(0.6)
+        time.sleep(0.2)
     
     wasd_interface._sit()
     return True
