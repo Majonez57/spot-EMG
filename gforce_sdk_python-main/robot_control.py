@@ -78,12 +78,16 @@ class Application:
             gforce.DataSubscription.EULERANGLE
         )        
 
-        await gforce_device.set_subscription(
-            gforce.DataSubscription.EMG_RAW
-        )
+        # await gforce_device.set_subscription(
+        #     gforce.DataSubscription.EMG_RAW
+        # )
         
         q = await gforce_device.start_streaming()
         # q2 = await gforce_device.start_streaming()
+
+        started = 0
+        start_roll = 0
+        start_pitch = 0
 
         while not self.terminated:
             v = await q.get()
@@ -95,7 +99,19 @@ class Application:
             if len(v[0]) == 3:
                 # Fetch orientation data from your IMU
                 orientation_data = v[0]  # Replace with actual data fetching
-                print("orientation: ", orientation_data)
+                if started == 0:
+                    start_roll = orientation_data[1]
+                    start_pitch = orientation_data[0]
+                    started = 1
+                if (orientation_data[1] - start_roll) < -20:
+                    print("right")
+                elif (orientation_data[1] - start_roll) > 40:
+                    print("left")
+                if (orientation_data[0] - start_pitch) < -40:
+                    print("back")
+                elif (orientation_data[0] - start_pitch) > 40:
+                    print("forward")
+                # print("orientation: ", orientation_data)
             else:
                 emg_data = convert_raw_emg_to_uv(v, gforce_device.resolution)
                 print("emg: ", emg_data)
