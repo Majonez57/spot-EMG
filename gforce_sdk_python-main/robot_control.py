@@ -6,7 +6,7 @@ import os
 import signal
 import sys
 import numpy as np
-from vpython import box, vector, rate, scene
+#from vpython import box, vector, rate, scene
 import numpy as np
 import math
 
@@ -120,7 +120,7 @@ class Application:
             # update_orientation(list(map(math.radians, orientation_data)))
             
             # Control the refresh rate
-            rate(60)  # Adjust for your preferred frame rate
+            #rate(60)  # Adjust for your preferred frame rate
 
         await gforce_device.stop_streaming()
         await gforce_device.disconnect()
