@@ -30,29 +30,31 @@ class SensorBand:
 
     async def get_cmd(self):
         v = await self.q.get()
+        with self.q.mutex:
+            self.q.empty()
         
         if len(v[0]) == 3:
             # Fetch orientation data from your IMU
             orientation_data = v[0]  # Replace with actual data fetching
-            if started == 0:
-                start_roll = orientation_data[1]
-                start_pitch = orientation_data[0]
-                start_yaw = orientation_data[2]
-                started = 1
+            if self.started == 0:
+                self.start_roll = orientation_data[1]
+                self.start_pitch = orientation_data[0]
+                self.start_yaw = orientation_data[2]
+                self.started = 1
             # if (orientation_data[1] - start_roll) < -20:
             #     print("right")
             # elif (orientation_data[1] - start_roll) > 40:
             #     print("left")
-            if (orientation_data[0] - start_pitch) < -40:
+            if (orientation_data[0] - self.start_pitch) < -40:
                 print("back")
                 return "back"
-            elif (orientation_data[0] - start_pitch) > 40:
+            elif (orientation_data[0] - self.start_pitch) > 40:
                 print("forward")
                 return "forward"
-            if (orientation_data[2] - start_yaw) < -20:
+            if (orientation_data[2] - self.start_yaw) < -20:
                 print("right")
                 return "right"
-            elif (orientation_data[2] - start_yaw) > 20:
+            elif (orientation_data[2] - self.start_yaw) > 20:
                 print("left")
                 return "left"
             # print("orientation: ", orientation_data)
@@ -75,10 +77,10 @@ class SensorBand:
         
         self.q = await self.gforce_device.start_streaming()
 
-        started = 0
-        start_roll = 0
-        start_pitch = 0
-        start_yaw = 0
+        self.started = 0
+        self.start_roll = 0
+        self.start_pitch = 0
+        self.start_yaw = 0
 
     async def stop(self):
         await self.gforce_device.stop_streaming()
