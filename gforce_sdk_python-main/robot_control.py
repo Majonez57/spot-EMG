@@ -18,6 +18,30 @@ sys.path.append(parent_dir)
 from lib_gforce import gforce
 
 
+def convert_raw_emg_to_uv(
+    data: bytes, resolution: gforce.SampleResolution
+) -> np.ndarray[np.float32]:
+    min_voltage = -1.25  # volt
+    max_voltage = 1.25  # volt
+
+    match resolution:
+        case gforce.SampleResolution.BITS_8:
+            div = 127.0
+            sub = 128
+        case gforce.SampleResolution.BITS_12:
+            div = 2047.0
+            sub = 2048
+        case _:
+            raise Exception(f"Unsupported resolution {resolution}")
+
+    gain = 1200.0
+    conversion_factor = (max_voltage - min_voltage) / gain / div
+
+    emg_data = (data.astype(np.float32) - sub) * conversion_factor
+
+    return emg_data.reshape(-1, len(data))
+
+
 class Application:
 
     def __init__(self):
@@ -36,35 +60,48 @@ class Application:
         print("Connected to {0}".format(gforce_device.device_name))
 
         # Create a 3D box to represent the IMU's orientation
-        imu_box = box(pos=vector(0,0,0), length=2, height=0.5, width=1, color=vector(1,0,0))
+        # imu_box = box(pos=vector(0,0,0), length=2, height=0.5, width=1, color=vector(1,0,0))
 
         def update_orientation(orientation_data):
             # Assuming orientation_data is a quaternion or Euler angles (roll, pitch, yaw)
             # Replace with the code to transform these angles into the correct orientation
             # Example for Euler angles:
             roll, pitch, yaw = orientation_data
-            imu_box.axis = vector(np.cos(yaw), np.sin(pitch), np.sin(roll))
+            # imu_box.axis = vector(np.cos(yaw), np.sin(pitch), np.sin(roll))
 
         await gforce_device.set_motor(True)
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
         await gforce_device.set_motor(False)
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
 
         await gforce_device.set_subscription(
             gforce.DataSubscription.EULERANGLE
-        )
+        )        
 
+        await gforce_device.set_subscription(
+            gforce.DataSubscription.EMG_RAW
+        )
+        
         q = await gforce_device.start_streaming()
+        # q2 = await gforce_device.start_streaming()
 
         while not self.terminated:
             v = await q.get()
-            print(v)
+            # v2 = await q2.get()
+            
+            # print(v)
+            # print(v2)
 
-            # Fetch orientation data from your IMU
-            orientation_data = v[0]  # Replace with actual data fetching
+            if len(v[0]) == 3:
+                # Fetch orientation data from your IMU
+                orientation_data = v[0]  # Replace with actual data fetching
+                print("orientation: ", orientation_data)
+            else:
+                emg_data = convert_raw_emg_to_uv(v, gforce_device.resolution)
+                print("emg: ", emg_data)
     
             # Update the orientation of the box
-            update_orientation(list(map(math.radians, orientation_data)))
+            # update_orientation(list(map(math.radians, orientation_data)))
             
             # Control the refresh rate
             rate(60)  # Adjust for your preferred frame rate
