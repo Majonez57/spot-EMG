@@ -51,7 +51,7 @@ class Application:
         start_yaw = 0
 
         # get the hostname
-        host = socket.gethostname()
+        host = ''
         port = 5000  # initiate port no above 1024
 
         server_socket = socket.socket()  # get instance
@@ -69,7 +69,8 @@ class Application:
             data = conn.recv(1024).decode()
             print("from connected user: " + str(data))
             if str(data) == "get_cmd":
-                msg = ""
+                
+                msg = "none"
                 v = await q.get()
 
                 if len(v[0]) == 3:

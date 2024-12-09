@@ -1,6 +1,6 @@
 import asyncio
 import struct
-from asyncio import Queue
+from asyncio import Queue, LifoQueue
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import IntEnum
@@ -644,7 +644,7 @@ class GForce:
         )
 
     async def start_streaming(self) -> Queue:
-        q = Queue()
+        q = LifoQueue()
         await self.client.start_notify(
             DATA_NOTIFY_CHAR_UUID,
             lambda _, data: self._on_data_response(q, data),
