@@ -1,22 +1,8 @@
-# Copyright (c) 2023 Boston Dynamics, Inc.  All rights reserved.
-#
-# Downloading, reproducing, distributing or otherwise using the SDK Software
-# is subject to the terms and conditions of the Boston Dynamics Software
-# Development Kit License (20191101-BDSDK-SL).
-
-"""WASD driving of robot."""
-import curses
-import io
+import datetime
 import logging
-import math
-import os
-import signal
 import sys
 import threading
 import time
-from collections import OrderedDict
-
-from PIL import Image, ImageEnhance
 
 import bosdyn.api.basic_command_pb2 as basic_command_pb2
 import bosdyn.api.power_pb2 as PowerServiceProto
@@ -24,6 +10,7 @@ import bosdyn.api.power_pb2 as PowerServiceProto
 import bosdyn.api.robot_state_pb2 as robot_state_proto
 import bosdyn.api.spot.robot_command_pb2 as spot_command_pb2
 import bosdyn.client.util
+import asyncio
 from bosdyn.api import geometry_pb2
 from bosdyn.client import ResponseError, RpcError, create_standard_sdk
 from bosdyn.client.async_tasks import AsyncGRPCTask, AsyncPeriodicQuery, AsyncTasks
@@ -38,11 +25,13 @@ from bosdyn.client.robot_state import RobotStateClient
 from bosdyn.client.time_sync import TimeSyncError
 from bosdyn.util import duration_str, format_metric, secs_to_hms
 
+from band.band_controller import SensorBand
+
 LOGGER = logging.getLogger()
 
-VELOCITY_BASE_SPEED = 0.5  # m/s
+VELOCITY_BASE_SPEED = 0.2  # m/s
 VELOCITY_BASE_ANGULAR = 0.2  # rad/sec
-VELOCITY_CMD_DURATION = 0.6  # seconds
+VELOCITY_CMD_DURATION = 0.5  # seconds
 COMMAND_INPUT_RATE = 0.1
 
 def _grpc_or_log(desc, thunk):
@@ -424,6 +413,19 @@ class EMGInterface(object):
             time_left = f'({secs_to_hms(battery_state.estimated_runtime.seconds)})'
         return f'Battery: {status}{bat_bar} {time_left}'
 
+
+def connect_to_band():
+    band = None
+    while True:
+        try:
+            band = SensorBand()
+            print("Intialising Band...")
+            asyncio.run(band.start())
+            print("Initiating Robot....")
+            return band
+        except:
+            print("Failed to connect to band... Retrying")
+
 def main():
 
     # Create robot object.
@@ -444,17 +446,37 @@ def main():
         LOGGER.error('Failed to initialize robot communication: %s', err)
         return False
 
-    print(wasd_interface.robot_state.power_state.motor_power_state)
     wasd_interface._toggle_estop()
     #wasd_interface._toggle_lease()
     wasd_interface._toggle_power()
     time.sleep(5)
     wasd_interface._stand()
-    time.sleep(3)
-    for i in range(0,5):
-        wasd_interface._turn_left()
-        time.sleep(0.2)
-    time.sleep(1)
+    time.sleep(2)
+
+
+
+    band = connect_to_band()
+    start = datetime.datetime.now()
+    while True:
+        
+        command = asyncio.run(band.get_cmd())
+        match command:
+            case 'back':
+                wasd_interface._move_backward()
+            case 'forward':
+                wasd_interface._move_forward()
+            case 'left':
+                wasd_interface._turn_left()
+            case 'right':
+                wasd_interface._turn_right()
+            case _:
+                continue
+
+        if datetime.datetime.now() - start > 60:
+            break
+
+        time.sleep(0.6)
+    
     wasd_interface._sit()
     return True
 
