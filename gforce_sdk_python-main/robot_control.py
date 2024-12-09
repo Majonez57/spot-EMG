@@ -6,7 +6,7 @@ import os
 import signal
 import sys
 import numpy as np
-from vpython import box, vector, rate, scene
+#from vpython import box, vector, rate, scene
 import numpy as np
 import math
 
