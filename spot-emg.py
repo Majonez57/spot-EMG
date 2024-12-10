@@ -466,6 +466,8 @@ def main():
                 wasd_interface._turn_left()
             case 'right':
                 wasd_interface._turn_right()
+            case 'finish':
+                break
             case _:
                 continue
 
