@@ -87,22 +87,25 @@ class Application:
                         start_pitch = orientation_data[0]
                         start_yaw = orientation_data[2]
                         started = 1
-                    # if (orientation_data[1] - start_roll) < -20:
-                    #     print("right")
-                    # elif (orientation_data[1] - start_roll) > 40:
-                    #     print("left")
-                    if (orientation_data[0] - start_pitch) < -40:
-                        print("back")
-                        msg = "back"
-                    elif (orientation_data[0] - start_pitch) > 40:
-                        print("forward")
-                        msg = "forward"
-                    elif (orientation_data[2] - start_yaw) < -20:
-                        print("right")
-                        msg = "right"
-                    elif (orientation_data[2] - start_yaw) > 20:
-                        print("left")
-                        msg = "left"
+                    if (orientation_data[1] - start_roll) < -20:
+                        print("finish")
+                        break
+                    elif (orientation_data[1] - start_roll) > 40:
+                        print("finish")
+                        break
+                    else:
+                        if (orientation_data[0] - start_pitch) < -40:
+                            print("back")
+                            msg = "back"
+                        elif (orientation_data[0] - start_pitch) > 40:
+                            print("forward")
+                            msg = "forward"
+                        elif (orientation_data[2] - start_yaw) < -20:
+                            print("right")
+                            msg = "right"
+                        elif (orientation_data[2] - start_yaw) > 20:
+                            print("left")
+                            msg = "left"
                     # print("orientation: ", orientation_data)
                 
                 conn.send(msg.encode())  # send data to the client

@@ -1,4 +1,4 @@
-# Code to control a robot
+# Sample code to control a robot, but only printing the commands on screen
 # TODO: align axes
 
 import asyncio
@@ -102,23 +102,28 @@ class Application:
             if len(v[0]) == 3:
                 # Fetch orientation data from your IMU
                 orientation_data = v[0]  # Replace with actual data fetching
+                # print(orientation_data)
+                # continue
                 if started == 0:
                     start_roll = orientation_data[1]
                     start_pitch = orientation_data[0]
                     start_yaw = orientation_data[2]
                     started = 1
-                # if (orientation_data[1] - start_roll) < -20:
-                #     print("right")
-                # elif (orientation_data[1] - start_roll) > 40:
-                #     print("left")
-                if (orientation_data[0] - start_pitch) < -40:
-                    print("back")
-                elif (orientation_data[0] - start_pitch) > 40:
-                    print("forward")
-                if (orientation_data[2] - start_yaw) < -20:
-                    print("right")
-                elif (orientation_data[2] - start_yaw) > 20:
-                    print("left")
+                if (orientation_data[1] - start_roll) < -20:
+                    print("finish")
+                    break
+                elif (orientation_data[1] - start_roll) > 40:
+                    print("finish")
+                    break
+                else:
+                    if (orientation_data[0] - start_pitch) < -40:
+                        print("back")
+                    elif (orientation_data[0] - start_pitch) > 40:
+                        print("forward")
+                    if (orientation_data[2] - start_yaw) < -20:
+                        print("right")
+                    elif (orientation_data[2] - start_yaw) > 20:
+                        print("left")
                 # print("orientation: ", orientation_data)
             else:
                 # emg_data = convert_raw_emg_to_uv(v, gforce_device.resolution)
